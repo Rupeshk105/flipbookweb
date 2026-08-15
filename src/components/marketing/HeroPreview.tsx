@@ -85,7 +85,7 @@ export function HeroPreview() {
     <div className="relative min-h-[32rem] overflow-hidden rounded-[2rem] bg-stone-300 shadow-2xl shadow-stone-400/40">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        key={activeImage.src}
+        key={`preview-image-${activeIndex}`}
         src={activeImage.src}
         alt={activeImage.alt}
         className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
@@ -122,7 +122,7 @@ export function HeroPreview() {
       <div className="absolute left-7 top-7 flex gap-2" aria-label="Preview image selector">
         {previewImages.map((image, index) => (
           <button
-            key={image.src}
+            key={`preview-selector-${index}`}
             type="button"
             onClick={() => setActiveIndex(index)}
             className={`h-1.5 rounded-full transition-all ${
