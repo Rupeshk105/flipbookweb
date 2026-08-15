@@ -1,6 +1,7 @@
 import { getCurrentProfile, logout } from '@/lib/auth-actions';
-import { createClient } from '@/lib/supabase-server';
+import { getCustomerProfile, getCustomerAlbums } from '@/lib/customer-actions';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 
 export default async function CustomerDashboardPage() {
   const profile = await getCurrentProfile();
@@ -9,21 +10,13 @@ export default async function CustomerDashboardPage() {
     redirect('/login');
   }
 
-  const supabase = await createClient();
-
-  // Get customer info
-  const { data: customer } = await supabase
-    .from('customers')
-    .select('*')
-    .eq('profile_id', profile.id)
-    .single();
-
-  // Get customer's albums
-  const { data: albums } = await supabase
-    .from('albums')
-    .select('*')
-    .eq('customer_id', customer?.id || '')
-    .eq('is_published', true);
+  let customer, albums;
+  try {
+    customer = await getCustomerProfile();
+    albums = await getCustomerAlbums();
+  } catch {
+    redirect('/login');
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -57,13 +50,19 @@ export default async function CustomerDashboardPage() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {albums.map((album) => (
-                  <div
+                  <Link
                     key={album.id}
-                    className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition"
+                    href={`/customer/album/${album.id}`}
+                    className="group border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg hover:border-blue-300 transition"
                   >
-                    <div className="h-48 bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+                    <div className="h-48 bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center overflow-hidden">
                       {album.cover_photo_path ? (
-                        <p className="text-gray-600">Photo</p>
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/wedding-photos/${album.cover_photo_path}`}
+                          alt={album.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition"
+                        />
                       ) : (
                         <p className="text-gray-500">No cover photo</p>
                       )}
@@ -78,11 +77,11 @@ export default async function CustomerDashboardPage() {
                       <p className="text-gray-500 text-sm mb-4">
                         {new Date(album.wedding_date).toLocaleDateString()}
                       </p>
-                      <button className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition">
-                        Open Album
-                      </button>
+                      <div className="inline-block px-4 py-2 bg-blue-600 group-hover:bg-blue-700 text-white rounded-lg font-medium transition">
+                        Open Album →
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
