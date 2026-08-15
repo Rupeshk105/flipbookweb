@@ -32,6 +32,22 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'customers_profile_id_fkey';
+            columns: ['id'];
+            isOneToOne: true;
+            referencedRelation: 'customers';
+            referencedColumns: ['profile_id'];
+          },
+          {
+            foreignKeyName: 'audit_logs_user_id_fkey';
+            columns: ['id'];
+            isOneToOne: false;
+            referencedRelation: 'audit_logs';
+            referencedColumns: ['user_id'];
+          },
+        ];
       };
       customers: {
         Row: {
@@ -64,6 +80,22 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'customers_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: true;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'albums_customer_id_fkey';
+            columns: ['id'];
+            isOneToOne: false;
+            referencedRelation: 'albums';
+            referencedColumns: ['customer_id'];
+          },
+        ];
       };
       albums: {
         Row: {
@@ -105,6 +137,29 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'albums_customer_id_fkey';
+            columns: ['customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'customers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'photos_album_id_fkey';
+            columns: ['id'];
+            isOneToOne: false;
+            referencedRelation: 'photos';
+            referencedColumns: ['album_id'];
+          },
+          {
+            foreignKeyName: 'album_music_album_id_fkey';
+            columns: ['id'];
+            isOneToOne: true;
+            referencedRelation: 'album_music';
+            referencedColumns: ['album_id'];
+          },
+        ];
       };
       photos: {
         Row: {
@@ -134,6 +189,15 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'photos_album_id_fkey';
+            columns: ['album_id'];
+            isOneToOne: false;
+            referencedRelation: 'albums';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       album_music: {
         Row: {
@@ -163,6 +227,15 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'album_music_album_id_fkey';
+            columns: ['album_id'];
+            isOneToOne: true;
+            referencedRelation: 'albums';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       audit_logs: {
         Row: {
@@ -192,6 +265,15 @@ export type Database = {
           metadata?: Record<string, unknown> | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'audit_logs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
     };
     Views: Record<string, never>;

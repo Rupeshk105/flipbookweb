@@ -13,7 +13,8 @@ interface Params {
 type Photo = Database['public']['Tables']['photos']['Row'];
 type Customer = Database['public']['Tables']['customers']['Row'];
 
-export default async function EditAlbumPage({ params }: { params: Params }) {
+export default async function EditAlbumPage({ params }: { params: Promise<Params> }) {
+  const { id } = await params;
   const profile = await getCurrentProfile();
 
   if (!profile || profile.role !== 'admin') {
@@ -25,7 +26,7 @@ export default async function EditAlbumPage({ params }: { params: Params }) {
   const { data: album } = await supabase
     .from('albums')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
   if (!album) {
@@ -35,13 +36,13 @@ export default async function EditAlbumPage({ params }: { params: Params }) {
   const { data: photos } = await supabase
     .from('photos')
     .select('*')
-    .eq('album_id', params.id)
+    .eq('album_id', id)
     .order('sort_order', { ascending: true });
 
   const { data: music } = await supabase
     .from('album_music')
     .select('*')
-    .eq('album_id', params.id)
+    .eq('album_id', id)
     .single();
 
   const { data: customers } = await supabase
@@ -70,7 +71,7 @@ export default async function EditAlbumPage({ params }: { params: Params }) {
         {/* Photos Section */}
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-8">
           <h2 className="text-xl font-bold text-white mb-6">Photos</h2>
-          <PhotoUploadForm albumId={params.id} />
+          <PhotoUploadForm albumId={id} />
 
           {photos && (photos as Photo[]).length > 0 && (
             <div className="mt-8">
@@ -100,7 +101,7 @@ export default async function EditAlbumPage({ params }: { params: Params }) {
         {/* Music Section */}
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-8">
           <h2 className="text-xl font-bold text-white mb-6">Background Music</h2>
-          <MusicUploadForm albumId={params.id} />
+          <MusicUploadForm albumId={id} />
 
           {music && (
             <div className="mt-8 p-4 bg-slate-700 rounded-lg">

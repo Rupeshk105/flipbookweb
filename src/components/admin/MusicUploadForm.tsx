@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { uploadMusic } from '@/lib/admin-actions';
+import { createMusicRecord, getAlbumUploadInfo } from '@/lib/admin-actions';
+import { createClient } from '@/lib/supabase-client';
 import { AlertCircle, Loader2, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -23,7 +24,15 @@ export function MusicUploadForm({ albumId }: MusicUploadFormProps) {
     if (!selectedFile) return;
 
     // Validate file type
-    if (!['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4'].includes(selectedFile.type)) {
+    if (![
+      'audio/mpeg',
+      'audio/wav',
+      'audio/x-wav',
+      'audio/ogg',
+      'audio/mp4',
+      'audio/x-m4a',
+      'audio/aac',
+    ].includes(selectedFile.type)) {
       setError('Invalid audio format. Please use MP3, WAV, OGG, or M4A');
       return;
     }
@@ -56,15 +65,22 @@ export function MusicUploadForm({ albumId }: MusicUploadFormProps) {
     setError(null);
 
     try {
-      const result = await uploadMusic(albumId, file, title);
+      const { customerId } = await getAlbumUploadInfo(albumId);
+      const supabase = createClient();
+      const fileName = `${Date.now()}-${file.name}`;
+      const storagePath = `${customerId}/${albumId}/${fileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from('wedding-music')
+        .upload(storagePath, file);
 
-      if (result.error) {
-        setError(result.error);
-      } else {
-        setFile(null);
-        setTitle('');
-        router.refresh();
+      if (uploadError) {
+        throw new Error(`Failed to upload music: ${uploadError.message}`);
       }
+
+      await createMusicRecord(albumId, storagePath, title);
+      setFile(null);
+      setTitle('');
+      router.refresh();
     } catch (err) {
       setError('An unexpected error occurred');
       console.error(err);

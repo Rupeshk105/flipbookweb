@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { uploadPhotos } from '@/lib/admin-actions';
+import { createPhotoRecord, getAlbumUploadInfo } from '@/lib/admin-actions';
+import { createClient } from '@/lib/supabase-client';
 import { AlertCircle, Loader2, Upload, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -52,14 +53,30 @@ export function PhotoUploadForm({ albumId }: PhotoUploadFormProps) {
     setError(null);
 
     try {
-      const result = await uploadPhotos(albumId, files);
+      const { customerId } = await getAlbumUploadInfo(albumId);
+      const supabase = createClient();
 
-      if (result.error) {
-        setError(result.error);
-      } else {
-        setFiles([]);
-        router.refresh();
+      for (const [index, file] of files.entries()) {
+        const fileName = `${Date.now()}-${file.name}`;
+        const storagePath = `${customerId}/${albumId}/${fileName}`;
+        const { error: uploadError } = await supabase.storage
+          .from('wedding-photos')
+          .upload(storagePath, file);
+
+        if (uploadError) {
+          throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+        }
+
+        await createPhotoRecord(
+          albumId,
+          storagePath,
+          file.name.replace(/\.[^/]*$/, ''),
+          index
+        );
       }
+
+      setFiles([]);
+      router.refresh();
     } catch (err) {
       setError('An unexpected error occurred');
       console.error(err);

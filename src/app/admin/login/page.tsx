@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
             <p className="text-center text-sm text-slate-400">
               Customer account?{' '}
               <a
-                href="/login"
+                href="/auth/login"
                 className="text-blue-400 hover:text-blue-300 font-medium"
               >
                 Customer Sign In

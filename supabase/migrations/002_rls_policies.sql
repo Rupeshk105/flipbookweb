@@ -6,18 +6,31 @@ ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE album_music ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
+-- Read the current user's role without recursively evaluating profiles RLS.
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.profiles
+    WHERE auth_user_id = auth.uid()
+      AND role = 'admin'
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+
 -- ==================== PROFILES TABLE POLICIES ====================
 
 -- Admin can read all profiles
 CREATE POLICY "admin_read_all_profiles" ON profiles
   FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.auth_user_id = auth.uid()
-      AND p.role = 'admin'
-    )
-  );
+  USING (public.is_admin());
 
 -- Users can read their own profile
 CREATE POLICY "users_read_own_profile" ON profiles

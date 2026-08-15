@@ -67,22 +67,14 @@ export default async function CustomersPage() {
                     <td className="py-4 px-6 text-white">
                       <div>
                         <p className="font-medium">{customer.full_name}</p>
-                        <p className="text-sm text-slate-400">
-                          {customer.bride_name} &amp; {customer.groom_name}
-                        </p>
                       </div>
                     </td>
                     <td className="py-4 px-6 text-slate-300">{customer.email}</td>
-                    <td className="py-4 px-6 text-slate-300">
-                      {new Date(customer.wedding_date).toLocaleDateString()}
-                    </td>
                     <td className="py-4 px-6">
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
                         customer.status === 'active'
                           ? 'bg-green-500/20 text-green-400'
-                          : customer.status === 'pending'
-                            ? 'bg-yellow-500/20 text-yellow-400'
-                            : 'bg-slate-500/20 text-slate-400'
+                          : 'bg-slate-500/20 text-slate-400'
                       }`}>
                         {customer.status}
                       </span>

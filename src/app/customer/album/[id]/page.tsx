@@ -3,32 +3,51 @@ import { getAlbumWithDetails } from '@/lib/customer-actions';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { PhotoGallery } from '@/components/customer/PhotoGallery';
+import { Flipbook } from '@/components/customer/Flipbook';
 import { MusicPlayer } from '@/components/customer/MusicPlayer';
 
 interface Params {
   id: string;
 }
 
-export default async function AlbumViewerPage({ params }: { params: Params }) {
+export default async function AlbumViewerPage({ params }: { params: Promise<Params> }) {
+  const { id } = await params;
   const profile = await getCurrentProfile();
 
   if (!profile || profile.role !== 'customer') {
-    redirect('/login');
+    redirect('/auth/login');
   }
 
-  let album, photos, music;
+  let album;
+  let photos: Awaited<ReturnType<typeof getAlbumWithDetails>>['photos'] = [];
+  let music: Awaited<ReturnType<typeof getAlbumWithDetails>>['music'] = null;
+  let loadError = false;
   try {
-    const result = await getAlbumWithDetails(params.id);
+    const result = await getAlbumWithDetails(id);
     album = result.album;
     photos = result.photos;
     music = result.music;
   } catch {
-    redirect('/customer/dashboard');
+    loadError = true;
   }
 
-  if (!album) {
-    redirect('/customer/dashboard');
+  if (loadError || !album) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
+        <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <h1 className="text-xl font-semibold text-slate-900">Album unavailable</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            This album may not be published yet, or it may not be linked to your customer account.
+          </p>
+          <Link
+            href="/customer/dashboard"
+            className="mt-6 inline-block rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+          >
+            Back to albums
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -92,6 +111,7 @@ export default async function AlbumViewerPage({ params }: { params: Params }) {
               </h2>
               <MusicPlayer
                 storagePath={music.storage_path}
+                url={music.signed_url}
                 title={music.title}
               />
             </div>
@@ -103,7 +123,12 @@ export default async function AlbumViewerPage({ params }: { params: Params }) {
               Photos
             </h2>
             {photos.length > 0 ? (
-              <PhotoGallery photos={photos} albumTitle={album.title} />
+              <Flipbook
+                photos={photos}
+                brideName={album.bride_name}
+                groomName={album.groom_name}
+                weddingDate={album.wedding_date}
+              />
             ) : (
               <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
                 <p className="text-gray-500">No photos in this album yet</p>

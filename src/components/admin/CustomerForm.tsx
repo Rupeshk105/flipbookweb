@@ -16,9 +16,6 @@ interface CustomerFormProps {
     id: string;
     full_name: string;
     email: string;
-    bride_name: string;
-    groom_name: string;
-    wedding_date: string;
   };
   onSuccess?: () => void;
 }
@@ -37,9 +34,6 @@ export function CustomerForm({ initialData, onSuccess }: CustomerFormProps) {
     defaultValues: initialData ? {
       full_name: initialData.full_name,
       email: initialData.email,
-      bride_name: initialData.bride_name,
-      groom_name: initialData.groom_name,
-      wedding_date: initialData.wedding_date,
     } : undefined,
   });
 
@@ -53,17 +47,11 @@ export function CustomerForm({ initialData, onSuccess }: CustomerFormProps) {
         result = await updateCustomer(initialData.id, {
           fullName: data.full_name,
           email: data.email,
-          brideName: data.bride_name,
-          groomName: data.groom_name,
-          weddingDate: data.wedding_date,
         });
       } else {
         result = await createCustomer({
           fullName: data.full_name,
           email: data.email,
-          brideName: data.bride_name,
-          groomName: data.groom_name,
-          weddingDate: data.wedding_date,
         });
       }
 
@@ -127,61 +115,6 @@ export function CustomerForm({ initialData, onSuccess }: CustomerFormProps) {
             <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
           )}
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-white mb-2">
-            Bride Name *
-          </label>
-          <input
-            {...register('bride_name')}
-            type="text"
-            placeholder="Jane Doe"
-            className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-0 transition ${
-              errors.bride_name ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-blue-500'
-            }`}
-            disabled={isLoading}
-          />
-          {errors.bride_name && (
-            <p className="mt-1 text-sm text-red-400">{errors.bride_name.message}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-white mb-2">
-            Groom Name *
-          </label>
-          <input
-            {...register('groom_name')}
-            type="text"
-            placeholder="John Smith"
-            className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-0 transition ${
-              errors.groom_name ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-blue-500'
-            }`}
-            disabled={isLoading}
-          />
-          {errors.groom_name && (
-            <p className="mt-1 text-sm text-red-400">{errors.groom_name.message}</p>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-white mb-2">
-          Wedding Date *
-        </label>
-        <input
-          {...register('wedding_date')}
-          type="date"
-          className={`w-full px-4 py-2 bg-slate-700 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-0 transition ${
-            errors.wedding_date ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-blue-500'
-          }`}
-          disabled={isLoading}
-        />
-        {errors.wedding_date && (
-          <p className="mt-1 text-sm text-red-400">{errors.wedding_date.message}</p>
-        )}
       </div>
 
       <div className="flex gap-4 pt-4">

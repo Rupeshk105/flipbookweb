@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Wedding Flipbook
 
-## Getting Started
+Wedding Flipbook is a private multi-tenant digital wedding album built with Next.js and Supabase.
 
-First, run the development server:
+## Local development
+
+Copy `.env.example` to `.env.local` and fill in the Supabase project URL and publishable/anon key. Keep `.env.local` private.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev -- -p 3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Routes:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `/` - public Wedding Flipbook homepage
+- `/auth/login` - customer login
+- `/admin/login` - admin login
+- `/customer/dashboard` - published customer albums
+- `/admin/dashboard` - album administration
 
-## Learn More
+## Supabase setup
 
-To learn more about Next.js, take a look at the following resources:
+Apply the SQL files in `supabase/migrations` in numeric order. Create these private Storage buckets:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `wedding-photos`
+- `wedding-music`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Apply the storage policies after the buckets exist. Create Auth users and matching `profiles` rows before testing login. Customer accounts also require a matching `customers` row.
 
-## Deploy on Vercel
+## Validation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run lint
+npm run build
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+Deploy with [Vercel](https://vercel.com) or another Node.js host. Configure the variables from `.env.example` in the host environment and set `NEXT_PUBLIC_SITE_URL` to the deployed HTTPS origin. Add that origin plus `/auth/reset-password` to Supabase Authentication URL Configuration.
+
+Keep service-role credentials server-only and never commit `.env.local`.

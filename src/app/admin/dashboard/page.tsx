@@ -136,9 +136,6 @@ export default async function AdminDashboardPage() {
                 {recentCustomers.map((customer) => (
                   <tr key={customer.id} className="border-b border-slate-700/50">
                     <td className="py-3 px-4 text-white">{customer.full_name}</td>
-                    <td className="py-3 px-4 text-slate-400">
-                      {new Date(customer.wedding_date).toLocaleDateString()}
-                    </td>
                     <td className="py-3 px-4">
                       <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-slate-700 text-slate-200">
                         {customer.status}

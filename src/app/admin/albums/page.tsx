@@ -4,6 +4,11 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Edit2 } from 'lucide-react';
 import { DeleteAlbumButton } from '@/components/admin/DeleteAlbumButton';
+import type { Database } from '@/types/supabase';
+
+type AlbumListItem = Database['public']['Tables']['albums']['Row'] & {
+  customers: { full_name: string } | null;
+};
 
 export default async function AlbumsPage() {
   const profile = await getCurrentProfile();
@@ -18,6 +23,7 @@ export default async function AlbumsPage() {
     .from('albums')
     .select('*, customers(full_name)')
     .order('created_at', { ascending: false });
+  const typedAlbums = (albums || []) as unknown as AlbumListItem[];
 
   return (
     <div className="p-8">
@@ -36,7 +42,7 @@ export default async function AlbumsPage() {
       </div>
 
       <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
-        {albums && albums.length > 0 ? (
+        {typedAlbums.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -62,7 +68,7 @@ export default async function AlbumsPage() {
                 </tr>
               </thead>
               <tbody>
-                {albums.map((album) => (
+                {typedAlbums.map((album) => (
                   <tr key={album.id} className="border-b border-slate-700/50 hover:bg-slate-700/20 transition">
                     <td className="py-4 px-6 text-white">
                       <div>

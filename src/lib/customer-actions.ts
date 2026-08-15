@@ -68,7 +68,19 @@ export async function getCustomerAlbums() {
     throw new Error(`Failed to fetch albums: ${error.message}`);
   }
 
-  return albums || [];
+  const albumsWithCovers = await Promise.all(
+    (albums || []).map(async (album) => {
+      if (!album.cover_photo_path) return { ...album, cover_photo_url: null };
+
+      const { data: cover } = await supabase.storage
+        .from('wedding-photos')
+        .createSignedUrl(album.cover_photo_path, 3600);
+
+      return { ...album, cover_photo_url: cover?.signedUrl || null };
+    })
+  );
+
+  return albumsWithCovers;
 }
 
 /**
@@ -131,10 +143,29 @@ export async function getAlbumWithDetails(albumId: string) {
     console.error('Error fetching music:', musicError);
   }
 
+  const photosWithUrls = await Promise.all(
+    (photos || []).map(async (photo) => {
+      const { data: signedPhoto } = await supabase.storage
+        .from('wedding-photos')
+        .createSignedUrl(photo.storage_path, 3600);
+
+      return { ...photo, signed_url: signedPhoto?.signedUrl || null };
+    })
+  );
+
+  let musicWithUrl = null;
+  if (music) {
+    const { data: signedMusic } = await supabase.storage
+      .from('wedding-music')
+      .createSignedUrl(music.storage_path, 3600);
+
+    musicWithUrl = { ...music, signed_url: signedMusic?.signedUrl || null };
+  }
+
   return {
     album,
-    photos: photos || [],
-    music: music || null,
+    photos: photosWithUrls,
+    music: musicWithUrl,
   };
 }
 

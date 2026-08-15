@@ -39,9 +39,6 @@ export default async function EditCustomerPage({ params }: { params: Params }) {
             id: customer.id,
             full_name: customer.full_name,
             email: customer.email,
-            bride_name: customer.bride_name,
-            groom_name: customer.groom_name,
-            wedding_date: customer.wedding_date,
           }}
         />
       </div>

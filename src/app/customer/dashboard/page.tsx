@@ -7,7 +7,7 @@ export default async function CustomerDashboardPage() {
   const profile = await getCurrentProfile();
 
   if (!profile || profile.role !== 'customer') {
-    redirect('/login');
+    redirect('/auth/login');
   }
 
   let customer, albums;
@@ -15,7 +15,7 @@ export default async function CustomerDashboardPage() {
     customer = await getCustomerProfile();
     albums = await getCustomerAlbums();
   } catch {
-    redirect('/login');
+    redirect('/auth/login');
   }
 
   return (
@@ -56,10 +56,10 @@ export default async function CustomerDashboardPage() {
                     className="group border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg hover:border-blue-300 transition"
                   >
                     <div className="h-48 bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center overflow-hidden">
-                      {album.cover_photo_path ? (
+                      {album.cover_photo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
-                          src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/wedding-photos/${album.cover_photo_path}`}
+                          src={album.cover_photo_url}
                           alt={album.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition"
                         />

@@ -15,10 +15,11 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginFormProps {
+  mode: 'admin' | 'customer';
   onSuccess?: () => void;
 }
 
-export function LoginForm({ onSuccess }: LoginFormProps) {
+export function LoginForm({ mode, onSuccess }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -35,7 +36,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     setError(null);
 
     try {
-      const result = await login(data.email, data.password);
+      const result = await login(data.email, data.password, mode);
       
       if (result.error) {
         setError(result.error);

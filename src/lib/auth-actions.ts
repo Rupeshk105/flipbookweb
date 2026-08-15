@@ -3,7 +3,11 @@
 import { createClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 
-export async function login(email: string, password: string) {
+export async function login(
+  email: string,
+  password: string,
+  expectedRole?: 'admin' | 'customer'
+) {
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -24,7 +28,21 @@ export async function login(email: string, password: string) {
       .single();
 
     if (profileError) {
-      return { error: 'Failed to load user profile' };
+      if (profileError.code === 'PGRST116') {
+        return {
+          error:
+            'No profile is linked to this account. Create a profiles row using the Auth user ID.',
+        };
+      }
+
+      return { error: 'Unable to load the user profile. Check the database setup.' };
+    }
+
+    if (expectedRole && profile.role !== expectedRole) {
+      await supabase.auth.signOut();
+      return {
+        error: `This account is not authorized for ${expectedRole} sign in.`,
+      };
     }
 
     // Redirect based on role
@@ -41,7 +59,7 @@ export async function login(email: string, password: string) {
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect('/login');
+  redirect('/auth/login');
 }
 
 export async function signup(
@@ -72,7 +90,7 @@ export async function resetPassword(email: string) {
   const supabase = await createClient();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/reset-password`,
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001'}/auth/reset-password`,
   });
 
   if (error) {

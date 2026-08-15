@@ -34,6 +34,7 @@ export function AlbumForm({ customerId, customers, initialData, onSuccess }: Alb
   } = useForm<AlbumFormData>({
     resolver: zodResolver(createAlbumSchema),
     defaultValues: initialData ? {
+      customer_id: initialData.customer_id,
       title: initialData.title,
       bride_name: initialData.bride_name,
       groom_name: initialData.groom_name,
@@ -51,17 +52,20 @@ export function AlbumForm({ customerId, customers, initialData, onSuccess }: Alb
       if (initialData) {
         result = await updateAlbum(initialData.id, {
           title: data.title,
-          description: data.description,
+          brideName: data.bride_name,
+          groomName: data.groom_name,
+          weddingDate: data.wedding_date,
+          description: data.description ?? undefined,
           isPublished,
         });
       } else {
         result = await createAlbum({
-          customerId: customerId || '',
+          customerId: data.customer_id,
           title: data.title,
           brideName: data.bride_name,
           groomName: data.groom_name,
           weddingDate: data.wedding_date,
-          description: data.description,
+          description: data.description ?? undefined,
         });
       }
 
@@ -95,10 +99,8 @@ export function AlbumForm({ customerId, customers, initialData, onSuccess }: Alb
             Customer *
           </label>
           <select
-            value={customerId}
-            onChange={() => {
-              // This is a parent component state, not ideal but works for now
-            }}
+            {...register('customer_id')}
+            defaultValue={customerId || ''}
             className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Select a customer</option>
@@ -108,6 +110,9 @@ export function AlbumForm({ customerId, customers, initialData, onSuccess }: Alb
               </option>
             ))}
           </select>
+          {errors.customer_id && (
+            <p className="mt-1 text-sm text-red-400">{errors.customer_id.message}</p>
+          )}
         </div>
       )}
 

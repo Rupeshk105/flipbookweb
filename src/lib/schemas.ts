@@ -37,11 +37,6 @@ export const createCustomerSchema = z.object({
   full_name: z.string().min(1, 'Full name is required').max(255),
   email: z.string().email('Invalid email address'),
   phone: z.string().max(20).optional().nullable(),
-  bride_name: z.string().min(1, 'Bride name is required').max(255),
-  groom_name: z.string().min(1, 'Groom name is required').max(255),
-  wedding_date: z.string().refine((date) => !isNaN(Date.parse(date)), {
-    message: 'Invalid date format',
-  }),
 });
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
