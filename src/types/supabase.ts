@@ -261,6 +261,38 @@ export type Database = {
         };
         Relationships: [];
       };
+      album_access_tokens: {
+        Row: {
+          id: string;
+          album_id: string;
+          token: string;
+          revoked_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          album_id: string;
+          token: string;
+          revoked_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          album_id?: string;
+          token?: string;
+          revoked_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'album_access_tokens_album_id_fkey';
+            columns: ['album_id'];
+            isOneToOne: true;
+            referencedRelation: 'albums';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       audit_logs: {
         Row: {
           id: string;

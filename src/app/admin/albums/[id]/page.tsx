@@ -6,6 +6,7 @@ import { PhotoUploadForm } from '@/components/admin/PhotoUploadForm';
 import { MusicUploadForm } from '@/components/admin/MusicUploadForm';
 import { DeletePhotoButton } from '@/components/admin/DeletePhotoButton';
 import { DeleteMusicButton } from '@/components/admin/DeleteMusicButton';
+import { AlbumQrCode } from '@/components/admin/AlbumQrCode';
 import type { Database } from '@/types/supabase';
 
 interface Params {
@@ -78,6 +79,12 @@ export default async function EditAlbumPage({ params }: { params: Promise<Params
             customers={(customers as Customer[]) || []}
             initialData={album}
           />
+        </div>
+
+        {/* Customer Access */}
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-8 max-w-2xl">
+          <h2 className="text-xl font-bold text-white mb-6">Customer Access</h2>
+          <AlbumQrCode albumId={id} />
         </div>
 
         {/* Photos Section */}

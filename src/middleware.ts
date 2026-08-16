@@ -5,8 +5,8 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes (no auth required)
-  const publicRoutes = ['/', '/auth/login', '/admin/login', '/auth/reset-password', '/demo'];
-  if (publicRoutes.includes(pathname)) {
+  const publicRoutes = ['/', '/auth/login', '/admin/login', '/auth/reset-password', '/auth/confirm', '/demo'];
+  if (publicRoutes.includes(pathname) || pathname.startsWith('/album-access/')) {
     return NextResponse.next();
   }
 

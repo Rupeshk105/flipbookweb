@@ -1,5 +1,6 @@
 'use server';
 
+import { randomBytes } from 'node:crypto';
 import { createClient } from '@/lib/supabase-server';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { getCurrentProfile } from './auth-actions';
@@ -237,6 +238,92 @@ export async function deleteAlbum(albumId: string) {
   }
 
   return { error: null };
+}
+
+/**
+ * Admin-only action to get (or create) a persistent QR/link token that repeatedly signs
+ * the album's customer straight in and opens the album, every time it's scanned.
+ */
+export async function generateAlbumAccessLink(albumId: string) {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== 'admin') {
+    throw new Error('Unauthorized');
+  }
+
+  const supabase = await createClient();
+
+  const { data: album, error: albumError } = await supabase
+    .from('albums')
+    .select('is_published')
+    .eq('id', albumId)
+    .single();
+
+  if (albumError || !album) {
+    return { error: 'Album not found' };
+  }
+
+  if (!album.is_published) {
+    return { error: 'Publish the album before generating a QR code for it' };
+  }
+
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch {
+    return { error: 'QR generation is not configured. Set SUPABASE_SERVICE_ROLE_KEY on the server.' };
+  }
+
+  // Uses the service-role client since album_access_tokens has no client-facing RLS policies.
+  const { data: existingToken } = await adminClient
+    .from('album_access_tokens')
+    .select('token')
+    .eq('album_id', albumId)
+    .is('revoked_at', null)
+    .single();
+
+  const token = existingToken?.token || randomBytes(24).toString('hex');
+
+  if (!existingToken) {
+    const { error: insertError } = await adminClient
+      .from('album_access_tokens')
+      .upsert({ album_id: albumId, token, revoked_at: null });
+
+    if (insertError) {
+      return { error: insertError.message };
+    }
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
+  return { error: null, url: `${siteUrl}/album-access/${token}` };
+}
+
+/**
+ * Admin-only action to revoke the current QR/link token for an album and issue a new one,
+ * invalidating any previously printed/shared QR codes.
+ */
+export async function regenerateAlbumAccessLink(albumId: string) {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== 'admin') {
+    throw new Error('Unauthorized');
+  }
+
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch {
+    return { error: 'QR generation is not configured. Set SUPABASE_SERVICE_ROLE_KEY on the server.' };
+  }
+
+  const { error: deleteError } = await adminClient
+    .from('album_access_tokens')
+    .delete()
+    .eq('album_id', albumId);
+
+  if (deleteError) {
+    return { error: deleteError.message };
+  }
+
+  return generateAlbumAccessLink(albumId);
 }
 
 /**
