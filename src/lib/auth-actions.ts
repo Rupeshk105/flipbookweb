@@ -45,12 +45,11 @@ export async function login(
       };
     }
 
-    // Redirect based on role
-    if (profile.role === 'admin') {
-      redirect('/admin/dashboard');
-    } else {
-      redirect('/customer/dashboard');
-    }
+    // Return redirect path instead of calling redirect() here, so the client
+    // can navigate without the thrown NEXT_REDIRECT being caught by its try/catch.
+    return {
+      redirectTo: profile.role === 'admin' ? '/admin/dashboard' : '/customer/dashboard',
+    };
   }
 
   return { error: 'Login failed' };

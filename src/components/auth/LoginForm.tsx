@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,7 +23,8 @@ interface LoginFormProps {
 export function LoginForm({ mode, onSuccess }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -37,16 +39,21 @@ export function LoginForm({ mode, onSuccess }: LoginFormProps) {
 
     try {
       const result = await login(data.email, data.password, mode);
-      
+
       if (result.error) {
         setError(result.error);
-      } else {
+        setIsLoading(false);
+        return;
+      }
+
+      if (result.redirectTo) {
         onSuccess?.();
+        router.push(result.redirectTo);
+        return;
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
       console.error(err);
-    } finally {
       setIsLoading(false);
     }
   }

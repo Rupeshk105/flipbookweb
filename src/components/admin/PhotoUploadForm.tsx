@@ -64,7 +64,15 @@ export function PhotoUploadForm({ albumId }: PhotoUploadFormProps) {
           .upload(storagePath, file);
 
         if (uploadError) {
-          throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+          const message = uploadError.message || 'Storage upload failed';
+
+          if (message.includes('bucket') || message.includes('policy') || message.includes('Unauthorized')) {
+            throw new Error(
+              'Supabase storage is not configured correctly for photo uploads. Check that the wedding-photos bucket exists and the admin upload policy is enabled.'
+            );
+          }
+
+          throw new Error(`Failed to upload ${file.name}: ${message}`);
         }
 
         await createPhotoRecord(
@@ -78,8 +86,9 @@ export function PhotoUploadForm({ albumId }: PhotoUploadFormProps) {
       setFiles([]);
       router.refresh();
     } catch (err) {
-      setError('An unexpected error occurred');
-      console.error(err);
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(message);
+      console.error('Photo upload failed:', err);
     } finally {
       setIsLoading(false);
     }

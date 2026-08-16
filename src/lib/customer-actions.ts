@@ -155,11 +155,16 @@ export async function getAlbumWithDetails(albumId: string) {
 
   let musicWithUrl = null;
   if (music) {
-    const { data: signedMusic } = await supabase.storage
+    const { data: signedMusic, error: signedMusicError } = await supabase.storage
       .from('wedding-music')
       .createSignedUrl(music.storage_path, 3600);
 
-    musicWithUrl = { ...music, signed_url: signedMusic?.signedUrl || null };
+    if (signedMusicError || !signedMusic?.signedUrl) {
+      console.warn('Music file missing or inaccessible:', music.storage_path, signedMusicError);
+      await supabase.from('album_music').delete().eq('id', music.id);
+    } else {
+      musicWithUrl = { ...music, signed_url: signedMusic.signedUrl };
+    }
   }
 
   return {

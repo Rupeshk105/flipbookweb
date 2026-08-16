@@ -105,16 +105,11 @@ export default async function AlbumViewerPage({ params }: { params: Promise<Para
 
           {/* Music Player */}
           {music && (
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Background Music
-              </h2>
-              <MusicPlayer
-                storagePath={music.storage_path}
-                url={music.signed_url}
-                title={music.title}
-              />
-            </div>
+            <MusicPlayer
+              storagePath={music.storage_path}
+              url={music.signed_url}
+              title={music.title}
+            />
           )}
 
           {/* Photo Gallery */}

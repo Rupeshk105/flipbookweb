@@ -67,6 +67,22 @@ export function MusicUploadForm({ albumId }: MusicUploadFormProps) {
     try {
       const { customerId } = await getAlbumUploadInfo(albumId);
       const supabase = createClient();
+
+      const { data: existingMusic, error: existingMusicError } = await supabase
+        .from('album_music')
+        .select('storage_path')
+        .eq('album_id', albumId)
+        .maybeSingle();
+
+      if (existingMusicError) {
+        console.error('Failed to fetch existing music record:', existingMusicError);
+      }
+
+      if (existingMusic?.storage_path) {
+        await supabase.storage.from('wedding-music').remove([existingMusic.storage_path]);
+        await supabase.from('album_music').delete().eq('album_id', albumId);
+      }
+
       const fileName = `${Date.now()}-${file.name}`;
       const storagePath = `${customerId}/${albumId}/${fileName}`;
       const { error: uploadError } = await supabase.storage
@@ -74,7 +90,15 @@ export function MusicUploadForm({ albumId }: MusicUploadFormProps) {
         .upload(storagePath, file);
 
       if (uploadError) {
-        throw new Error(`Failed to upload music: ${uploadError.message}`);
+        const message = uploadError.message || 'Storage upload failed';
+
+        if (message.includes('bucket') || message.includes('policy') || message.includes('Unauthorized')) {
+          throw new Error(
+            'Supabase storage is not configured correctly for music uploads. Check that the wedding-music bucket exists and the admin upload policy is enabled.'
+          );
+        }
+
+        throw new Error(`Failed to upload music: ${message}`);
       }
 
       await createMusicRecord(albumId, storagePath, title);
@@ -82,8 +106,9 @@ export function MusicUploadForm({ albumId }: MusicUploadFormProps) {
       setTitle('');
       router.refresh();
     } catch (err) {
-      setError('An unexpected error occurred');
-      console.error(err);
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(message);
+      console.error('Music upload failed:', err);
     } finally {
       setIsLoading(false);
     }

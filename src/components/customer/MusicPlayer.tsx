@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 
 interface MusicPlayerProps {
@@ -13,6 +13,7 @@ export function MusicPlayer({ storagePath, url, title }: MusicPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const musicUrl = url || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/wedding-music/${storagePath}`;
 
@@ -21,20 +22,33 @@ export function MusicPlayer({ storagePath, url, title }: MusicPlayerProps) {
     if (!audio) return;
 
     audio.play()
-      .then(() => setIsPlaying(true))
-      .catch(() => setIsPlaying(false));
-  }, [musicUrl]);
+      .then(() => {
+        setIsPlaying(true);
+        setError(null);
+      })
+      .catch(() => {
+        // Browsers block unmuted autoplay without user interaction; wait for a click on play.
+        setIsPlaying(false);
+      });
+  }, []);
 
   const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play()
-          .then(() => setIsPlaying(true))
-          .catch(() => setIsPlaying(false));
-      }
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      return;
     }
+
+    audioRef.current.play()
+      .then(() => {
+        setIsPlaying(true);
+        setError(null);
+      })
+      .catch(() => {
+        setIsPlaying(false);
+        setError('Playback was blocked by the browser. Click play again to start the music.');
+      });
   };
 
   const toggleMute = () => {
@@ -45,70 +59,50 @@ export function MusicPlayer({ storagePath, url, title }: MusicPlayerProps) {
   };
 
   return (
-    <div className="w-full rounded-xl border border-stone-700 bg-stone-900 p-5 text-stone-100 shadow-lg">
+    <div className="inline-flex items-center gap-3 rounded-full border border-stone-700 bg-stone-900 px-4 py-2 text-stone-100 shadow-lg">
       <audio
         ref={audioRef}
         src={musicUrl}
         preload="auto"
-        onPlay={() => setIsPlaying(true)}
+        onPlay={() => {
+          setIsPlaying(true);
+          setError(null);
+        }}
         onPause={() => setIsPlaying(false)}
         onEnded={() => setIsPlaying(false)}
+        onError={() => setError('This music file could not be loaded. Please check the uploaded file or refresh the album.')}
       />
 
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-200 text-xl text-stone-900">
-            ♪
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="truncate font-semibold text-white">{title}</p>
-            <p className="text-sm text-stone-400">Background music</p>
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center gap-3 border-t border-stone-700 pt-4">
-          <button
-            type="button"
-            onClick={togglePlay}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-200 transition hover:bg-amber-100"
-            aria-label={isPlaying ? 'Pause' : 'Play'}
-          >
-            {isPlaying ? (
-              <Pause size={20} className="text-stone-900" />
-            ) : (
-              <Play size={20} className="text-stone-900" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={toggleMute}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-stone-600 transition hover:bg-stone-800"
-            aria-label={isMuted ? 'Unmute' : 'Mute'}
-          >
-            {isMuted ? (
-              <VolumeX size={20} className="text-stone-300" />
-            ) : (
-              <Volume2 size={20} className="text-stone-300" />
-            )}
-          </button>
-          <span className="text-sm text-stone-400">
-            {isPlaying ? 'Playing' : 'Ready to play'}
-          </span>
-        </div>
-
-        {/* Playing indicator */}
-        {isPlaying && (
-          <div className="flex gap-1 items-center justify-center">
-            <div className="h-2 w-1 rounded-full bg-amber-300 animate-pulse" />
-            <div className="h-3 w-1 rounded-full bg-amber-300 animate-pulse delay-75" />
-            <div className="h-2 w-1 rounded-full bg-amber-300 animate-pulse delay-150" />
-            <p className="ml-2 text-xs font-medium text-amber-200">Now Playing</p>
-          </div>
+      <button
+        type="button"
+        onClick={togglePlay}
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-200 transition hover:bg-amber-100"
+        aria-label={isPlaying ? `Pause ${title}` : `Play ${title}`}
+        title={title}
+      >
+        {isPlaying ? (
+          <Pause size={20} className="text-stone-900" />
+        ) : (
+          <Play size={20} className="text-stone-900" />
         )}
-      </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={toggleMute}
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-stone-600 transition hover:bg-stone-800"
+        aria-label={isMuted ? 'Unmute' : 'Mute'}
+      >
+        {isMuted ? (
+          <VolumeX size={20} className="text-stone-300" />
+        ) : (
+          <Volume2 size={20} className="text-stone-300" />
+        )}
+      </button>
+
+      {error && (
+        <span className="text-xs text-amber-300">{error}</span>
+      )}
     </div>
   );
 }
