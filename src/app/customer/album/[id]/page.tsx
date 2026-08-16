@@ -1,5 +1,5 @@
 import { getCurrentProfile } from '@/lib/auth-actions';
-import { getAlbumWithDetails } from '@/lib/customer-actions';
+import { getAlbumWithDetails, getPublicSettings } from '@/lib/customer-actions';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -30,6 +30,8 @@ export default async function AlbumViewerPage({ params }: { params: Promise<Para
   } catch {
     loadError = true;
   }
+
+  const { siteName, contactPhone } = await getPublicSettings();
 
   if (loadError || !album) {
     return (
@@ -123,6 +125,8 @@ export default async function AlbumViewerPage({ params }: { params: Promise<Para
                 brideName={album.bride_name}
                 groomName={album.groom_name}
                 weddingDate={album.wedding_date}
+                siteName={siteName}
+                contactPhone={contactPhone}
               />
             ) : (
               <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">

@@ -34,6 +34,8 @@ interface FlipbookProps {
   brideName: string;
   groomName: string;
   weddingDate: string;
+  siteName?: string;
+  contactPhone?: string;
 }
 
 interface FlipBookApi {
@@ -94,8 +96,8 @@ const BookCover = forwardRef<HTMLDivElement, { title: string; weddingDate: strin
   }
 );
 
-const BookEndPage = forwardRef<HTMLDivElement, { url: string }>(
-  function BookEndPage({ url }, ref) {
+const BookEndPage = forwardRef<HTMLDivElement, { url: string; siteName: string; contactPhone: string }>(
+  function BookEndPage({ url, siteName, contactPhone }, ref) {
     return (
       <div ref={ref} className="h-full overflow-hidden bg-stone-900 p-3" data-density="hard">
         <div className="relative flex h-full min-h-0 items-end overflow-hidden border border-amber-200/40 bg-stone-800 p-6 pb-16 sm:p-8 sm:pb-20">
@@ -104,8 +106,8 @@ const BookEndPage = forwardRef<HTMLDivElement, { url: string }>(
           <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/20 to-transparent" />
           <div className="relative z-10 text-white">
             <p className="font-serif text-3xl italic">With love, always.</p>
-            <p className="mt-5 text-sm font-semibold tracking-[0.2em] text-amber-200">REYANSH STUDIO</p>
-            <p className="mt-2 text-xs tracking-[0.16em] text-white/80">8383899540</p>
+            <p className="mt-5 text-sm font-semibold tracking-[0.2em] text-amber-200">{siteName.toUpperCase()}</p>
+            <p className="mt-2 text-xs tracking-[0.16em] text-white/80">{contactPhone}</p>
           </div>
         </div>
       </div>
@@ -113,7 +115,7 @@ const BookEndPage = forwardRef<HTMLDivElement, { url: string }>(
   }
 );
 
-export function Flipbook({ photos, brideName, groomName, weddingDate }: FlipbookProps) {
+export function Flipbook({ photos, brideName, groomName, weddingDate, siteName = 'Reyansh Studio', contactPhone = '8383899540' }: FlipbookProps) {
   const bookRef = useRef<FlipBookApi>(null);
   const [pageIndex, setPageIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -155,7 +157,7 @@ export function Flipbook({ photos, brideName, groomName, weddingDate }: Flipbook
     )),
   ];
 
-  pageElements.push(<BookEndPage key="end-page" url={endPageUrl} />);
+  pageElements.push(<BookEndPage key="end-page" url={endPageUrl} siteName={siteName} contactPhone={contactPhone} />);
 
   if (pageElements.length % 2 === 1) {
     pageElements.push(<BookPage key="back-cover" />);

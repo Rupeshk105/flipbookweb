@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { createAdminClient } from '@/lib/supabase-admin';
 import { getCurrentProfile } from './auth-actions';
 import { createCustomerSchema, createAlbumSchema } from './schemas';
 import type { Database } from '@/types/supabase';
@@ -434,4 +435,206 @@ export async function createMusicRecord(
   }
 
   return data;
+}
+
+/**
+ * Admin-only action to delete a single photo from storage and the database
+ */
+export async function deletePhoto(photoId: string) {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== 'admin') {
+    throw new Error('Unauthorized');
+  }
+
+  const supabase = await createClient();
+
+  const { data: photo, error: photoError } = await supabase
+    .from('photos')
+    .select('storage_path')
+    .eq('id', photoId)
+    .single();
+
+  if (photoError || !photo) {
+    return { error: 'Photo not found' };
+  }
+
+  const { error: storageError } = await supabase.storage
+    .from('wedding-photos')
+    .remove([photo.storage_path]);
+
+  if (storageError) {
+    console.error('Failed to remove photo from storage:', storageError);
+  }
+
+  const { error: deleteError } = await supabase
+    .from('photos')
+    .delete()
+    .eq('id', photoId);
+
+  if (deleteError) {
+    return { error: deleteError.message };
+  }
+
+  return { error: null };
+}
+
+/**
+ * Admin-only action to delete an album's background music from storage and the database
+ */
+export async function deleteMusic(albumId: string) {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== 'admin') {
+    throw new Error('Unauthorized');
+  }
+
+  const supabase = await createClient();
+
+  const { data: music, error: musicError } = await supabase
+    .from('album_music')
+    .select('storage_path')
+    .eq('album_id', albumId)
+    .single();
+
+  if (musicError || !music) {
+    return { error: 'Music not found' };
+  }
+
+  const { error: storageError } = await supabase.storage
+    .from('wedding-music')
+    .remove([music.storage_path]);
+
+  if (storageError) {
+    console.error('Failed to remove music from storage:', storageError);
+  }
+
+  const { error: deleteError } = await supabase
+    .from('album_music')
+    .delete()
+    .eq('album_id', albumId);
+
+  if (deleteError) {
+    return { error: deleteError.message };
+  }
+
+  return { error: null };
+}
+
+const DEFAULT_CUSTOMER_PASSWORD = 'Wedding@123';
+
+/**
+ * Get the single app_settings row, creating fallback defaults if the table is empty
+ */
+export async function getAppSettings() {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== 'admin') {
+    throw new Error('Unauthorized');
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('app_settings')
+    .select('*')
+    .eq('id', 'default')
+    .single();
+
+  if (error || !data) {
+    return {
+      id: 'default',
+      site_name: 'Reyansh Studio',
+      contact_phone: '8383899540',
+      default_customer_password: DEFAULT_CUSTOMER_PASSWORD,
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  return data;
+}
+
+/**
+ * Admin-only action to update site settings
+ */
+export async function updateAppSettings(formData: {
+  siteName: string;
+  contactPhone: string;
+  defaultCustomerPassword: string;
+}) {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== 'admin') {
+    throw new Error('Unauthorized');
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('app_settings')
+    .upsert({
+      id: 'default',
+      site_name: formData.siteName,
+      contact_phone: formData.contactPhone,
+      default_customer_password: formData.defaultCustomerPassword,
+      updated_at: new Date().toISOString(),
+    });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { error: null };
+}
+
+/**
+ * Admin-only action to reset a customer's password to the default (or a supplied) value
+ */
+export async function resetCustomerPassword(customerId: string, newPassword?: string) {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== 'admin') {
+    throw new Error('Unauthorized');
+  }
+
+  const supabase = await createClient();
+
+  const { data: customer, error: customerError } = await supabase
+    .from('customers')
+    .select('profile_id')
+    .eq('id', customerId)
+    .single();
+
+  if (customerError || !customer) {
+    return { error: 'Customer not found' };
+  }
+
+  const { data: customerProfile, error: profileError } = await supabase
+    .from('profiles')
+    .select('auth_user_id')
+    .eq('id', customer.profile_id)
+    .single();
+
+  if (profileError || !customerProfile) {
+    return { error: 'Linked auth account not found for this customer' };
+  }
+
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch {
+    return { error: 'Password reset is not configured. Set SUPABASE_SERVICE_ROLE_KEY on the server.' };
+  }
+
+  const { data: settings } = await supabase
+    .from('app_settings')
+    .select('default_customer_password')
+    .eq('id', 'default')
+    .single();
+
+  const passwordToSet = newPassword || settings?.default_customer_password || DEFAULT_CUSTOMER_PASSWORD;
+
+  const { error: updateError } = await adminClient.auth.admin.updateUserById(
+    customerProfile.auth_user_id,
+    { password: passwordToSet }
+  );
+
+  if (updateError) {
+    return { error: updateError.message };
+  }
+
+  return { error: null, password: passwordToSet };
 }

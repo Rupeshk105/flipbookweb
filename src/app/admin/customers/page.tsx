@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Edit2 } from 'lucide-react';
 import { DeleteCustomerButton } from '@/components/admin/DeleteCustomerButton';
+import { ResetPasswordButton } from '@/components/admin/ResetPasswordButton';
 
 export default async function CustomersPage() {
   const profile = await getCurrentProfile();
@@ -90,6 +91,10 @@ export default async function CustomersPage() {
                         >
                           <Edit2 size={18} />
                         </Link>
+                        <ResetPasswordButton
+                          customerId={customer.id}
+                          customerName={customer.full_name}
+                        />
                         <DeleteCustomerButton
                           customerId={customer.id}
                           customerName={customer.full_name}

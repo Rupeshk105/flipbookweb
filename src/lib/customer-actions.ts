@@ -4,6 +4,29 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentProfile } from './auth-actions';
 
 /**
+ * Get site branding info (name, contact phone) for display on customer-facing pages.
+ * Readable by any authenticated user; falls back to defaults if unset.
+ */
+export async function getPublicSettings() {
+  const profile = await getCurrentProfile();
+  if (!profile) {
+    throw new Error('Unauthorized');
+  }
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('app_settings')
+    .select('site_name, contact_phone')
+    .eq('id', 'default')
+    .single();
+
+  return {
+    siteName: data?.site_name || 'Reyansh Studio',
+    contactPhone: data?.contact_phone || '8383899540',
+  };
+}
+
+/**
  * Get customer's profile and basic info
  * Used by customer dashboard to display personalized greeting
  */
@@ -143,15 +166,23 @@ export async function getAlbumWithDetails(albumId: string) {
     console.error('Error fetching music:', musicError);
   }
 
-  const photosWithUrls = await Promise.all(
-    (photos || []).map(async (photo) => {
-      const { data: signedPhoto } = await supabase.storage
-        .from('wedding-photos')
-        .createSignedUrl(photo.storage_path, 3600);
+  const photosWithUrls = (
+    await Promise.all(
+      (photos || []).map(async (photo) => {
+        const { data: signedPhoto, error: signedPhotoError } = await supabase.storage
+          .from('wedding-photos')
+          .createSignedUrl(photo.storage_path, 3600);
 
-      return { ...photo, signed_url: signedPhoto?.signedUrl || null };
-    })
-  );
+        if (signedPhotoError || !signedPhoto?.signedUrl) {
+          console.warn('Photo file missing or inaccessible:', photo.storage_path, signedPhotoError);
+          await supabase.from('photos').delete().eq('id', photo.id);
+          return null;
+        }
+
+        return { ...photo, signed_url: signedPhoto.signedUrl };
+      })
+    )
+  ).filter((photo): photo is NonNullable<typeof photo> => photo !== null);
 
   let musicWithUrl = null;
   if (music) {

@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { AlbumForm } from '@/components/admin/AlbumForm';
 import { PhotoUploadForm } from '@/components/admin/PhotoUploadForm';
 import { MusicUploadForm } from '@/components/admin/MusicUploadForm';
+import { DeletePhotoButton } from '@/components/admin/DeletePhotoButton';
+import { DeleteMusicButton } from '@/components/admin/DeleteMusicButton';
 import type { Database } from '@/types/supabase';
 
 interface Params {
@@ -38,6 +40,16 @@ export default async function EditAlbumPage({ params }: { params: Promise<Params
     .select('*')
     .eq('album_id', id)
     .order('sort_order', { ascending: true });
+
+  const photosWithUrls = await Promise.all(
+    ((photos as Photo[]) || []).map(async (photo) => {
+      const { data: signed } = await supabase.storage
+        .from('wedding-photos')
+        .createSignedUrl(photo.storage_path, 3600);
+
+      return { ...photo, signed_url: signed?.signedUrl || null };
+    })
+  );
 
   const { data: music } = await supabase
     .from('album_music')
@@ -79,12 +91,22 @@ export default async function EditAlbumPage({ params }: { params: Promise<Params
                 Uploaded Photos ({(photos as Photo[]).length})
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {(photos as Photo[]).map((photo) => (
-                  <div key={photo.id} className="bg-slate-700 rounded-lg overflow-hidden">
+                {photosWithUrls.map((photo) => (
+                  <div key={photo.id} className="relative bg-slate-700 rounded-lg overflow-hidden">
+                    <DeletePhotoButton photoId={photo.id} />
                     <div className="aspect-square bg-slate-600 flex items-center justify-center">
-                      <span className="text-slate-400 text-sm">
-                        Photo {photo.sort_order + 1}
-                      </span>
+                      {photo.signed_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={photo.signed_url}
+                          alt={photo.caption || ''}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-slate-400 text-sm">
+                          Photo {photo.sort_order + 1}
+                        </span>
+                      )}
                     </div>
                     <div className="p-2">
                       <p className="text-xs text-slate-300 truncate">
@@ -104,9 +126,12 @@ export default async function EditAlbumPage({ params }: { params: Promise<Params
           <MusicUploadForm albumId={id} />
 
           {music && (
-            <div className="mt-8 p-4 bg-slate-700 rounded-lg">
-              <p className="text-white font-medium mb-2">Current Music:</p>
-              <p className="text-slate-300">{music.title}</p>
+            <div className="mt-8 flex items-center justify-between p-4 bg-slate-700 rounded-lg">
+              <div>
+                <p className="text-white font-medium mb-2">Current Music:</p>
+                <p className="text-slate-300">{music.title}</p>
+              </div>
+              <DeleteMusicButton albumId={id} />
             </div>
           )}
         </div>

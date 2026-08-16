@@ -32,14 +32,22 @@ export default async function CustomerDashboardPage() {
               </p>
             )}
           </div>
-          <form action={logout}>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
+          <div className="flex items-center gap-3">
+            <Link
+              href="/customer/change-password"
+              className="px-6 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition"
             >
-              Logout
-            </button>
-          </form>
+              Change Password
+            </Link>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
+              >
+                Logout
+              </button>
+            </form>
+          </div>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-6">

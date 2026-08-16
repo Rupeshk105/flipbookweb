@@ -237,6 +237,30 @@ export type Database = {
           },
         ];
       };
+      app_settings: {
+        Row: {
+          id: string;
+          site_name: string;
+          contact_phone: string;
+          default_customer_password: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          site_name?: string;
+          contact_phone?: string;
+          default_customer_password?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          site_name?: string;
+          contact_phone?: string;
+          default_customer_password?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       audit_logs: {
         Row: {
           id: string;

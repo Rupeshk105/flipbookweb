@@ -7,19 +7,20 @@ interface Params {
   id: string;
 }
 
-export default async function EditCustomerPage({ params }: { params: Params }) {
+export default async function EditCustomerPage({ params }: { params: Promise<Params> }) {
   const profile = await getCurrentProfile();
 
   if (!profile || profile.role !== 'admin') {
     redirect('/admin/login');
   }
 
+  const { id } = await params;
   const supabase = await createClient();
 
   const { data: customer, error } = await supabase
     .from('customers')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
   if (error || !customer) {
